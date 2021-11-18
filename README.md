@@ -10,6 +10,8 @@ While in directory:
 sudo apt-get install virtualenv
 
 source venv/bin/activate
+
+python mp3_reader.py
 ```
 
 # Libraries Used
