@@ -6,7 +6,7 @@ from mutagen.flac import FLAC, Picture
 from mutagen.oggvorbis import OggVorbis
 
 def credentials():
-    with open(os.path.expanduser("~/Creds/Tag-Reader.json"), mode='r') as op:
+    with open(os.path.expanduser("/short/Credentials/Creds/Tag-Reader.json"), mode='r') as op:
         payload = json.load(op)
     return payload
 
