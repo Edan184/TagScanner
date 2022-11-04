@@ -6,7 +6,7 @@ from mutagen.flac import FLAC, Picture
 from mutagen.oggvorbis import OggVorbis
 
 def credentials():
-    with open(os.path.expanduser("/short/Credentials/Creds/Tag-Reader.json"), mode='r') as op:
+    with open(os.path.expanduser("/short/Credentials/Wonderfell/music_database.json"), mode='r') as op:
         payload = json.load(op)
     return payload
 
@@ -48,7 +48,7 @@ def create_table():
 def exists(artist, title, album, genre, time, filename, file_type, has_art):
 
     try:
-        location = "/mnt/e/Backups/Edans_Media/Music/{}".format(filename)
+        location = "/mnt/l/Music/{}".format(filename)
         track = File(location)
         time = str(datetime.timedelta(seconds=track.info.length))
         query = 'SELECT * FROM music WHERE artist = "{0}" AND title = "{1}" AND album = "{2}" AND genre = "{3}" AND length = "{4}" AND bitrate = "{5}" AND filename = "{6}" AND file_type = "{7}" AND has_art = "{8}";'.format(artist, title, album, genre, time, str(track.info.bitrate // 1000) + "kpbs", filename, file_type, has_art)
@@ -63,8 +63,13 @@ def exists(artist, title, album, genre, time, filename, file_type, has_art):
         return False
 
 def distribute():
-    i = len([name for name in os.listdir('.') if os.path.isfile(name)]) / 8
-    index = [i*1,i*2,i*3,i*4,i*5,i*6,i*7,i*8]
+    increment = 0
+    db_iterator = os.scandir('/mnt/l/Music')
+    for entry in db_iterator:
+        if entry.is_file():
+            increment = increment + 1
+    i = increment / 4
+    index = [i*1,i*2,i*3,i*4]
     return index
 
 # Take str as input, adds a '\' prior to illegal char to nullify entry obstruction in MySQL
@@ -91,7 +96,7 @@ def sanitize_input(input, filename):
 # Enters entry (artist, title, album, genre, length, bitrate, whether_has_art, filename) in to MysQL
 def mysql_insert_mp3(filename, file_type):
         
-    location = "/mnt/e/Backups/Edans_Media/Music/{}".format(filename)
+    location = "/mnt/l/Music/{}".format(filename)
     try:
         track = File(location)
     except Exception as e:
@@ -127,8 +132,8 @@ def mysql_insert_mp3(filename, file_type):
         try:
             if os.path.exists(location + " Cover Art.jpg") == False:
                 artwork = track.tags['APIC:'].data
-                with open("/mnt/e/Backups/Edans_Media/Cover_Art/{}".format(filename + " Cover Art.jpg"), 'wb') as img:
-                    print("/mnt/e/Backups/Edans_Media/Cover_art/{}".format(filename + " Cover Art.jpg"))
+                with open("/mnt/f/Cove/{}".format(filename + " Cover Art.jpg"), 'wb') as img:
+                    print("/mnt/f/Cove/{}".format(filename + " Cover Art.jpg"))
                     img.write(artwork)
                     has_art = 1
             else:
@@ -150,7 +155,7 @@ def mysql_insert_mp3(filename, file_type):
 # Enters entry (artist, title, album, genre, length, bitrate, whether_has_art, filename) in to MysQL
 def mysql_insert_flac(filename, file_type):
 
-    location = "/mnt/e/Backups/Edans_Media/Music/{}".format(filename)
+    location = "/mnt/l/Music/{}".format(filename)
     try:
         track = File(location)
     except Exception as e:
@@ -188,8 +193,8 @@ def mysql_insert_flac(filename, file_type):
                 for p in artwork:
                     if p.type == 3:
                         has_art = 1
-                        with open("/mnt/e/Backups/Edans_Media/Cover_Art/{}".format(filename + " Cover Art.jpg"), 'wb') as img:
-                            print("/mnt/e/Backups/Edans_Media/Cover_art/{}".format(filename + " Cover Art.jpg"))
+                        with open("/mnt/f/Cove/{}".format(filename + " Cover Art.jpg"), 'wb') as img:
+                            print("/mnt/f/Cove/{}".format(filename + " Cover Art.jpg"))
                             img.write(p.data)
                     else:
                         pass
@@ -213,7 +218,7 @@ def mysql_insert_flac(filename, file_type):
 # Enters entry (artist, title, album, genre, length, bitrate, whether_has_art, filename) in to MysQL
 def mysql_insert_ogg(filename, file_type):
 
-    location = "/mnt/e/Backups/Edans_Media/Music/{}".format(filename)
+    location = "/mnt/l/Music/{}".format(filename)
     try:
         track = File(location)
     except Exception as e:
@@ -248,8 +253,8 @@ def mysql_insert_ogg(filename, file_type):
         try:
             if os.path.exists(location + " Cover Art.jpg") == False:
                 artwork = base64.b64decode(track.tags['metadata_block_picture'][0])
-                with open("/mnt/e/Backups/Edans_Media/Cover_Art/{}".format(filename + " Cover Art.jpg"), 'wb') as img:
-                    print("/mnt/e/Backups/Edans_Media/Cover_art/{}".format(filename + " Cover Art.jpg"))
+                with open("/mnt/f/Cove/{}".format(filename + " Cover Art.jpg"), 'wb') as img:
+                    print("/mnt/f/Cove/{}".format(filename + " Cover Art.jpg"))
                     img.write(artwork)
                     has_art = 1
             else:
@@ -268,7 +273,7 @@ def mysql_insert_ogg(filename, file_type):
     return
 
 def scan(index):
-    base = len([name for name in os.listdir('.') if os.path.isfile(name)]) / 8
+    base = distribute()[3] / 4
     if base / index == 1:
         i = 0
     elif base / index < 1:
@@ -299,7 +304,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(filename="mp3.log", level=logging.ERROR)
 
-    workdir = "/mnt/e/Backups/Edans_Media/Music"
+    workdir = "/mnt/l/Music"
     #rootdir = input("Input full path of directory to scan: ")
     os.chdir(workdir)
     create_table()
@@ -312,10 +317,6 @@ if __name__ == "__main__":
     p2 = multiprocessing.Process(target=scan, args=(distribute()[1],))
     p3 = multiprocessing.Process(target=scan, args=(distribute()[2],))
     p4 = multiprocessing.Process(target=scan, args=(distribute()[3],))
-    p5 = multiprocessing.Process(target=scan, args=(distribute()[4],))
-    p6 = multiprocessing.Process(target=scan, args=(distribute()[5],))
-    p7 = multiprocessing.Process(target=scan, args=(distribute()[6],))
-    p8 = multiprocessing.Process(target=scan, args=(distribute()[7],))
     #p1 = multiprocessing.Process(target=scan(distribute()[0]))
     #p2 = multiprocessing.Process(target=scan(distribute()[1]))
     #p3 = multiprocessing.Process(target=scan(distribute()[2]))
@@ -323,8 +324,4 @@ if __name__ == "__main__":
     p1.start()
     p2.start()
     p3.start()
-    p4.start()
-    p5.start()
-    p6.start()
-    p7.start()
-    p8.start()    
+    p4.start()  
